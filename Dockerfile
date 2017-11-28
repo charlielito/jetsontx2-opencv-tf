@@ -134,4 +134,5 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/aarch64-linux-gnu/tegra
 
 # PilotCli library for control with socketio
 RUN pip install --upgrade pip && \
-    pip install git+https://bitbucket.org/kiwicampus/pilot-cli@develop shyaml cytoolz
+    pip install git+https://bitbucket.org/kiwicampus/pilot-cli@develop shyaml cytoolz && \
+    pip install pandas git+https://github.com/cgarciae/dataget
