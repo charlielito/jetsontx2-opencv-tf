@@ -2,7 +2,7 @@ FROM aarch64/ubuntu
 
 COPY qemu-aarch64-static /usr/bin/
 
-RUN apt update && apt install -y bzip2 curl unp sudo
+RUN apt-get update && apt-get install -y bzip2 curl unp sudo
 
 WORKDIR /tmp
 
@@ -15,8 +15,8 @@ RUN curl https://s3-us-west-1.amazonaws.com/jetson-packages/cuda-repo-l4t-8-0-lo
     curl https://s3-us-west-1.amazonaws.com/jetson-packages/libcudnn6-dev_6.0.21-1%2Bcuda8.0_arm64.deb -so /tmp/libcudnn6-dev_6.0.21-1+cuda8.0_arm64.deb && \
     curl https://s3-us-west-1.amazonaws.com/jetson-packages/libcudnn6_6.0.21-1%2Bcuda8.0_arm64.deb -so /tmp/libcudnn6_6.0.21-1+cuda8.0_arm64.deb && \
     dpkg -i /tmp/cuda-repo-l4t-8-0-local_8.0.84-1_arm64.deb && \
-    apt update && \
-    apt install -y cuda-toolkit-8.0 && \
+    apt-get update && \
+    apt-get install -y cuda-toolkit-8.0 && \
     dpkg -i /tmp/libcudnn6_6.0.21-1+cuda8.0_arm64.deb && \
     dpkg -i /tmp/libcudnn6-dev_6.0.21-1+cuda8.0_arm64.deb && \
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/aarch64-linux-gnu/tegra && \
@@ -24,11 +24,8 @@ RUN curl https://s3-us-west-1.amazonaws.com/jetson-packages/cuda-repo-l4t-8-0-lo
     rm -fr /tmp/* \
     && apt-get -y clean all
 
-# GIT
-RUN apt install -y git
-
-# Python 2.7
-RUN apt install -y \
+# Python 2.7 and git
+RUN apt-get install -y git \
     python-pip \
     python-dev \
     python-numpy \
@@ -46,7 +43,7 @@ RUN curl https://s3-us-west-1.amazonaws.com/jetson-packages/tensorflow-1.3.0-cp2
 
 # OPENCV Stuff
 
-RUN apt install -y \
+RUN apt-get install -y \
     libglew-dev \
     libtiff5-dev \
     zlib1g-dev \
@@ -70,7 +67,7 @@ RUN apt install -y \
 
 
 # Python 3.5 and stuff
-RUN apt install -y \
+RUN apt-get install -y \
     python3-pip \
     python3-dev \
     python3-numpy \
@@ -135,5 +132,46 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/aarch64-linux-gnu/tegra
 # PilotCli library for control with socketio
 RUN pip install --upgrade pip && \
     pip install git+https://bitbucket.org/kiwicampus/pilot-cli@develop shyaml cytoolz && \
-    pip install pandas && \
-    pip install git+https://github.com/cgarciae/dataget@develop
+    pip install pandas
+
+# XTERM minimal installation
+COPY ./keyboard /etc/default/keyboard
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
+  apt-utils \
+  clang \
+  xserver-xorg-core \
+  xserver-xorg-input-all \
+  xserver-xorg-video-fbdev \
+  xorg \
+  libdbus-1-dev \
+  libgtk2.0-dev \
+  libnotify-dev \
+  libgnome-keyring-dev \
+  libgconf2-dev \
+  libasound2-dev \
+  libcap-dev \
+  libcups2-dev \
+  libxtst-dev \
+  vlc \
+  libxss1 \
+  libnss3-dev \
+  fluxbox \
+  libsmbclient \
+  libssh-4 \
+  fbset \
+  xine-ui \
+  libexpat-dev \
+  && apt-get -y clean all \
+  && rm -rf /var/lib/apt/lists/*
+
+# Set Xorg and FLUXBOX preferences
+RUN mkdir ~/.fluxbox
+RUN echo "xset s off" > ~/.fluxbox/startup && echo "xserver-command=X -s 0 dpms" >> ~/.fluxbox/startup
+RUN echo "#!/bin/bash" > /etc/X11/xinit/xserverrc \
+  && echo "" >> /etc/X11/xinit/xserverrc \
+  && echo 'exec /usr/bin/X -s 0 dpms -nocursor -nolisten tcp "$@"' >> /etc/X11/xinit/xserverrc
+
+# Config file for videoplayer
+RUN mkdir /root/.xine
+COPY ./config /root/.xine/config
